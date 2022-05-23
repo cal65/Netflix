@@ -8,30 +8,24 @@ library(stringi)
 library(ggrepel)
 library(ggthemes)
 source('netprocess.R')
-netflix <- read.csv('NetflixViewingHistory.csv')
+netflix <- read.csv('NetflixViewingHistory_Saman.csv')
 netflix$Date <- as.Date(netflix$Date, format = '%m/%d/%y')
 #set order, reverse order
 setDT(netflix)
-netflix[(Date == '2017-04-17')]$Title <- 'Tropic Thunder'
 netflix <- preprocess_netflix(netflix)
-title_values <- strsplit(netflix$Title, ':')
 
 netflix_counts <- data.frame(table(netflix$Name))
 names(netflix_counts) <-
   mapvalues(names(netflix_counts), from = 'Var1', to = 'Title')
-artifact <- fread('netflix_artifact.csv')
-netflix_counts <- merge(netflix_counts, artifact, by='Title', all.x=T)
 netflix_counts$Type <-
   ifelse(netflix_counts$Freq > 1, 'Series' , 'Movie')
 netflix_counts$Type <- ifelse(
   netflix_counts$Title %in%
     c(
-      'Donald Glover',
-      'Ali Wong',
-      'COMEDIANS of the world',
       'Patriot Act with Hasan Minhaj',
-      'Historical Roasts',
-      'My Next Guest Needs No Introduction With David Letterman'
+      'Bo Burnham',
+      'Ari Shaffir',
+      'Hannah Gadsby'
     ),
   'Comedy Specials',
   netflix_counts$Type
@@ -80,9 +74,7 @@ foreign_language_df <-
       'Dark',
       'Lupin',
       'Taco Chronicles',
-      'Vincenzo',
-      'Squid Game',
-      'Club de Cuervos'
+      'Vincenzo'
     ),
     Language = c(
       'German',
@@ -97,9 +89,7 @@ foreign_language_df <-
       'German',
       'French',
       'Spanish',
-      'Korean',
-      'Korean',
-      'Spanish'
+      'Korean'
     )
   )
 netflix_counts <-
@@ -108,28 +98,6 @@ netflix_counts <-
         by = 'Title',
         all.x = T)
 netflix_counts$Language[is.na(netflix_counts$Language)] <- 'English'
-
-netflix_counts$Cal <- T
-netflix_counts$Cal <-
-  ifelse(
-    netflix_counts$Title %in% c(
-      'American Horror Story',
-      'Always a Witch',
-      'Californication',
-      'Orange Is the New Black',
-      'Donnie Darko',
-      'Love Actually',
-      "Inside Bill's Brain",
-      'Icarus',
-      "Perú",
-      '',
-      'Beyond Stranger Things',
-      'Ozark',
-      'Breaking Bad'
-    ),
-    F,
-    netflix_counts$Cal
-  )
 
 netflix_all <-
   merge(netflix, netflix_counts, by.x = 'Name', by.y = 'Title')
@@ -144,7 +112,7 @@ name_wrap <- function(name, width = 40) {
 }
 
 netflix_all$Name <- sapply(netflix_all$Name, name_wrap)
-netflix_ts <- netflix_all[Cal == T, .(Episodes = .N),
+netflix_ts <- netflix_all[, .(Episodes = .N),
                           by = c('Date', 'Name', 'Language', 'Type')]
 netflix_ts$Name <-
   factor(netflix_ts$Name, levels = unique(netflix_ts[order(Date)]$Name))
@@ -167,12 +135,11 @@ ggplot(netflix_ts) + geom_point(
     strip.text.y = element_text(angle = 0, size = 14),
     strip.background = element_rect(fill = 'dark red'),
     strip.placement = 'bottom',
-    axix.text.y = element_text(size=4),
     panel.grid.minor = element_blank(),
     panel.background = element_rect(color = 'black')
   ) +
-  ggtitle("Cal's Netflix History")
-ggsave(paste0('Netflix_history_', today, '.jpeg'),
+  ggtitle("Saman's Netflix History")
+ggsave(paste0('Netflix_history_Saman_', today, '.jpeg'),
        width = 11,
        height = 6)
 
@@ -189,12 +156,12 @@ day_count <- netflix[, .(n = .N), by = 'Date']
 netflix <-
   merge(netflix, netflix_counts[, c('Title', 'Type')], by.x = 'Name', by.y =
           'Title')
-ggplot(netflix) + geom_histogram(aes(x = Date, fill = Type), color = 'black', bins = 180) +
+ggplot(netflix) + geom_histogram(aes(x = Date, fill = Type), color = 'black', bins = 120) +
   geom_vline(aes(xintercept = corona_lockdown), linetype = 'dashed') +
   scale_fill_brewer(palette = 'Spectral') +
   ggtitle('Netflix Volume Consumption') +
-  theme_linedraw() +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_linedraw()
 ggsave(paste0('Netflix_histogram_', today, '.jpeg'),
        width = 11,
        height = 6)
